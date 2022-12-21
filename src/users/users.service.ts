@@ -1,24 +1,43 @@
-import { Injectable } from '@nestjs/common';
-
-// This should be a real class/interface representing a user entity
-export type User = any;
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CreateUserDto } from './create-use.dto';
+import { User, UserDocument } from './schemas/user.schema';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  private readonly users = [
-    {
-      userId: 1,
-      username: 'john',
-      password: 'changeme',
-    },
-    {
-      userId: 2,
-      username: 'maria',
-      password: 'guess',
-    },
-  ];
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async findOne(username: string): Promise<User | undefined> {
-    return this.users.find((user) => user.username === username);
+  async findOne(username: string): Promise<User> {
+    return this.userModel.findOne({ username });
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    // Search for a duplicated username
+    const user = await this.userModel.findOne({
+      username: createUserDto.username,
+    });
+    if (user) {
+      throw new HttpException(
+        'Signup failed, invalid username or password.',
+        HttpStatus.CONFLICT,
+      );
+    }
+    // If not found, hash the password
+    const hashedPassword = await UsersService.hashPassword(
+      createUserDto.password,
+    );
+    // Create a new user
+    const createdUser = new this.userModel({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+    return createdUser.save();
+  }
+
+  static async hashPassword(password: string): Promise<string> {
+    const saltOrRounds = 10;
+    return await bcrypt.hash(password, saltOrRounds);
   }
 }
