@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { CreateUserDto } from './create-use.dto';
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
+import { passwordValidationRegex, usernameValidationRegex } from './constants';
 
 @Injectable()
 export class UsersService {
@@ -24,20 +25,44 @@ export class UsersService {
         HttpStatus.CONFLICT,
       );
     }
-    // If not found, hash the password
-    const hashedPassword = await UsersService.hashPassword(
-      createUserDto.password,
-    );
-    // Create a new user
-    const createdUser = new this.userModel({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-    return createdUser.save();
+    // Validate fields
+    const validFields = await UsersService.validateFields(createUserDto);
+    if (validFields) {
+      // If not found, hash the password
+      const hashedPassword = await UsersService.hashPassword(
+        createUserDto.password,
+      );
+      // Create a new user
+      const createdUser = new this.userModel({
+        ...createUserDto,
+        password: hashedPassword,
+      });
+      return createdUser.save();
+    } else {
+      throw new HttpException(
+        'Signup failed, invalid username or password.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   static async hashPassword(password: string): Promise<string> {
     const saltOrRounds = 10;
     return await bcrypt.hash(password, saltOrRounds);
+  }
+
+  static async validateFields(createUserDto: CreateUserDto) {
+    return (
+      UsersService.validatePassword(createUserDto.password) &&
+      UsersService.validateUsername(createUserDto.username)
+    );
+  }
+
+  static validatePassword(password) {
+    return passwordValidationRegex.test(password);
+  }
+
+  static validateUsername(username) {
+    return usernameValidationRegex.test(username);
   }
 }
