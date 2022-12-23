@@ -11,4 +11,9 @@ export class AppController {
   async login(@Request() req) {
     return this.authService.login(req.user);
   }
+
+  @Post('auth/verify')
+  async verify(@Request() req) {
+    return this.authService.verifyToken(req.body.token);
+  }
 }
