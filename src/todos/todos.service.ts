@@ -9,11 +9,11 @@ export class TodosService {
   constructor(@InjectModel(Todo.name) private todoModel: Model<TodoDocument>) {}
 
   async findAll(): Promise<Todo[]> {
-    return this.todoModel.find().exec();
+    return this.todoModel.find();
   }
 
   async findOne(id: string): Promise<Todo> {
-    return this.todoModel.findById(id).exec();
+    return this.todoModel.findById(id);
   }
 
   async create(createTodoDto: CreateTodoDto): Promise<Todo> {
