@@ -54,11 +54,14 @@ export class AuthService {
     });
   }
 
-  async verifyToken(token: string) {
+  async verifyToken(token: string, secret: string) {
     try {
-      const decoded = await this.jwtService.verify(token);
+      const decoded = await this.jwtService.verify(token, {
+        secret: secret,
+      });
       return decoded;
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Authorization failed, invalid token.',
         HttpStatus.FORBIDDEN,
@@ -110,17 +113,27 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(username: string, refreshToken: string) {
+  async checkIfUserExists(username: string) {
     const user = await this.usersService.findOne(username);
     if (!user || !user.refreshToken) {
       throw new ForbiddenException('Access Denied');
     }
-    const refreshTokenMatches = user.refreshToken === refreshToken;
+    return user;
+  }
+
+  async refreshTokens(username: string, req) {
+    const user = await this.checkIfUserExists(username);
+    const refreshTokenMatches = user.refreshToken === req.cookies.refresh_token;
     if (!refreshTokenMatches) {
       throw new ForbiddenException('Access Denied');
     }
     const tokens = await this.getTokens(user._id, user.username);
-    await this.updateRefreshToken(user.username, tokens.refreshToken);
-    return tokens;
+    if (
+      !this.verifyToken(tokens.refreshToken, process.env.JWT_REFRESH_SECRET)
+    ) {
+      await this.updateRefreshToken(user.username, tokens.refreshToken);
+      return tokens;
+    }
+    return { ...tokens, refreshToken: user.refreshToken };
   }
 }

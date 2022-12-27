@@ -17,11 +17,6 @@ export class AppController {
     return;
   }
 
-  @Post('auth/verify')
-  async verify(@Request() req) {
-    return this.authService.verifyToken(req.body.token);
-  }
-
   @UseGuards(RefreshTokenGuard)
   @Get('auth/refresh')
   async refreshTokens(
@@ -29,8 +24,7 @@ export class AppController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const username = req.body.username;
-    const refreshToken = req.cookies.refresh_token;
-    const tokens = await this.authService.refreshTokens(username, refreshToken);
+    const tokens = await this.authService.refreshTokens(username, req);
     this.authService.storeTokensInCookie(res, tokens);
     res.status(200).send({ message: 'ok ' });
     return;
