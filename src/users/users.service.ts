@@ -6,12 +6,25 @@ import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { passwordValidationRegex, usernameValidationRegex } from './constants';
 
+class UpdateUserDto {
+  refreshToken: string;
+}
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async findOne(username: string): Promise<User> {
     return this.userModel.findOne({ username });
+  }
+
+  async update(username: string, createUseDto: UpdateUserDto): Promise<User> {
+    return this.userModel.findOneAndUpdate(
+      { username },
+      {
+        $set: { refreshToken: createUseDto.refreshToken },
+      },
+      { new: true },
+    );
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
