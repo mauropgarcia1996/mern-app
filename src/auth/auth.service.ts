@@ -54,6 +54,17 @@ export class AuthService {
     });
   }
 
+  clearTokensInCookie(res: Response) {
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+  }
+
+  clearTokensInDb(username: string) {
+    this.usersService.update(username, {
+      refreshToken: null,
+    });
+  }
+
   async verifyToken(token: string, secret: string) {
     try {
       const decoded = await this.jwtService.verify(token, {
@@ -72,7 +83,7 @@ export class AuthService {
   async updateRefreshToken(username: string, refreshToken: string) {
     try {
       const updated = await this.usersService.update(username, {
-        refreshToken,
+        refreshToken: refreshToken,
       });
       return updated;
     } catch (error) {

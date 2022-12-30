@@ -11,14 +11,20 @@ export class RefreshTokenStrategy extends PassportStrategy(
 ) {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        RefreshTokenStrategy.extractJWT,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       secretOrKey: jwtConstants.refreshSecret,
       passReqToCallback: true,
     });
   }
 
-  validate(req: Request, payload: any) {
-    const refreshToken = req.get('Authorization').replace('Bearer', '').trim();
-    return { ...payload, refreshToken };
+  async validate(payload: any) {
+    return { userId: payload.sub, username: payload.username };
+  }
+
+  private static extractJWT(req: Request): string | null {
+    return req.cookies.refresh_token;
   }
 }

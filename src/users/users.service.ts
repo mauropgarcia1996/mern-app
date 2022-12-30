@@ -17,11 +17,11 @@ export class UsersService {
     return this.userModel.findOne({ username });
   }
 
-  async update(username: string, createUseDto: UpdateUserDto): Promise<User> {
+  async update(username: string, update): Promise<User> {
     return this.userModel.findOneAndUpdate(
       { username },
       {
-        $set: { refreshToken: createUseDto.refreshToken },
+        $set: update,
       },
       { new: true },
     );

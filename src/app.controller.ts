@@ -29,4 +29,13 @@ export class AppController {
     res.status(200).send({ message: 'ok ' });
     return;
   }
+
+  @UseGuards(RefreshTokenGuard)
+  @Post('auth/logout')
+  async logout(@Request() req, @Res({ passthrough: true }) res: Response) {
+    this.authService.clearTokensInCookie(res);
+    this.authService.clearTokensInDb(req.body.username);
+    res.status(200).send({ message: 'ok ' });
+    return;
+  }
 }
