@@ -8,7 +8,12 @@ import { Todo, TodoDocument } from './schemas/todo.schema';
 export class TodosService {
   constructor(@InjectModel(Todo.name) private todoModel: Model<TodoDocument>) {}
 
-  async findAll(): Promise<Todo[]> {
+  async findAll(status: string): Promise<Todo[]> {
+    if (status === 'done') {
+      return this.todoModel.find({ done: true });
+    } else if (status === 'incompleted') {
+      return this.todoModel.find({ done: false });
+    }
     return this.todoModel.find();
   }
 
