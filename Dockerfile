@@ -1,36 +1,43 @@
-FROM debian:bullseye as builder
 
-ARG NODE_VERSION=16.15.0
+# PRODUCTION DOCKERFILE
+# ---------------------
+# This Dockerfile allows to build a Docker image of the NestJS application
+# and based on a NodeJS 16 image. The multi-stage mechanism allows to build
+# the application in a "builder" stage and then create a lightweight production
+# image containing the required dependencies and the JS build files.
+# 
+# Dockerfile best practices
+# https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+# Dockerized NodeJS best practices
+# https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md
+# https://www.bretfisher.com/node-docker-good-defaults/
+# http://goldbergyoni.com/checklist-best-practice-of-node-js-in-production/
 
-RUN apt-get update; apt install -y curl python-is-python3 pkg-config build-essential
-RUN curl https://get.volta.sh | bash
-ENV VOLTA_HOME /root/.volta
-ENV PATH /root/.volta/bin:$PATH
-RUN volta install node@${NODE_VERSION}
+FROM node:16-alpine as builder
 
-#######################################################################
+ENV NODE_ENV build
 
-RUN mkdir /app
-WORKDIR /app
+USER node
+WORKDIR /home/node
 
-# NPM will not install any package listed in "devDependencies" when NODE_ENV is set to "production",
-# to install all modules: "npm install --production=false".
-# Ref: https://docs.npmjs.com/cli/v9/commands/npm-install#description
+COPY package*.json ./
+RUN npm ci
+
+COPY --chown=node:node . .
+RUN npm run build \
+    && npm prune --production
+
+# ---
+
+FROM node:16-alpine
 
 ENV NODE_ENV production
 
-COPY . .
+USER node
+WORKDIR /home/node
 
-RUN npm install && npm run build
-FROM debian:bullseye
+COPY --from=builder --chown=node:node /home/node/package*.json ./
+COPY --from=builder --chown=node:node /home/node/node_modules/ ./node_modules/
+COPY --from=builder --chown=node:node /home/node/dist/ ./dist/
 
-LABEL fly_launch_runtime="nodejs"
-
-COPY --from=builder /root/.volta /root/.volta
-COPY --from=builder /app /app
-
-WORKDIR /app
-ENV NODE_ENV production
-ENV PATH /root/.volta/bin:$PATH
-
-CMD [ "npm", "run", "start" ]
+CMD ["node", "dist/main.js"]
