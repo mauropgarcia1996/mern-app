@@ -48,11 +48,13 @@ export class AuthService {
       maxAge: 1000 * 60 * 15,
       httpOnly: true,
       sameSite: 'none',
+      secure: true,
     });
     res.cookie('refresh_token', tokens.refreshToken, {
       maxAge: 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
       sameSite: 'none',
+      secure: true,
     });
   }
 
