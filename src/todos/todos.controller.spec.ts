@@ -45,6 +45,7 @@ describe('TodosController', () => {
         _id: '63a22d3b2cba1137dc2eea52',
         title: 'Limpiar balcon.',
         __v: 0,
+        done: false,
       },
       {
         _id: '63a22dcdf66bb3da5b26a096',
@@ -54,7 +55,7 @@ describe('TodosController', () => {
       },
     ];
     TodoModel.find.mockResolvedValueOnce(todosList);
-    const todos = await todosController.findAll();
+    const todos = await todosController.findAll('all');
     expect(todos).toEqual(todosList);
   });
   it('should find a todo by id', async () => {
