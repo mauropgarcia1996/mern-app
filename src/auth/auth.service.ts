@@ -47,10 +47,12 @@ export class AuthService {
     res.cookie('access_token', tokens.accessToken, {
       maxAge: 1000 * 60 * 15,
       httpOnly: true,
+      sameSite: 'none',
     });
     res.cookie('refresh_token', tokens.refreshToken, {
       maxAge: 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
+      sameSite: 'none',
     });
   }
 
